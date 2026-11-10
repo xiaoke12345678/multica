@@ -50,6 +50,9 @@ interface ConfigState {
   // deleted the replies too, so absent must fail closed: the client then
   // promises nothing about replies and uses the legacy delete route.
   commentDeleteKeepRepliesSupported: boolean;
+  // draw.io viewer base URL for diagram previews. Empty means the embedded
+  // preview is off (the operator disabled it, or the server predates it).
+  drawioViewerUrl: string;
   setCdnConfig: (config: { cdnDomain: string; cdnSigned?: boolean }) => void;
   setAttachmentPublicUrl: (url?: string) => void;
   setAuthConfig: (config: {
@@ -71,6 +74,7 @@ interface ConfigState {
   setAgentConversationStartersSupported: (supported?: boolean) => void;
   setIssueCreatePropertiesSupported: (supported?: boolean) => void;
   setCommentDeleteKeepRepliesSupported: (supported?: boolean) => void;
+  setDrawioViewerUrl: (url?: string) => void;
 }
 
 export const configStore = createStore<ConfigState>((set) => ({
@@ -92,6 +96,7 @@ export const configStore = createStore<ConfigState>((set) => ({
   agentConversationStartersSupported: false,
   issueCreatePropertiesSupported: false,
   commentDeleteKeepRepliesSupported: false,
+  drawioViewerUrl: "",
   setCdnConfig: ({ cdnDomain, cdnSigned = false }) => set({ cdnDomain, cdnSigned }),
   setAttachmentPublicUrl: (url = "") => set({ attachmentPublicUrl: url }),
   setAuthConfig: ({
@@ -122,6 +127,7 @@ export const configStore = createStore<ConfigState>((set) => ({
     set({ issueCreatePropertiesSupported: supported === true }),
   setCommentDeleteKeepRepliesSupported: (supported = false) =>
     set({ commentDeleteKeepRepliesSupported: supported === true }),
+  setDrawioViewerUrl: (url = "") => set({ drawioViewerUrl: url }),
 }));
 
 export function useConfigStore(): ConfigState;

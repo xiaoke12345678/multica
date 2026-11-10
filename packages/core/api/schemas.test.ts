@@ -2517,3 +2517,18 @@ describe("task usage credits", () => {
     expect(parsed.usage?.[0]?.credits_micros).toBeUndefined();
   });
 });
+
+describe("AppConfigSchema drawio_viewer_url drift", () => {
+  it.each([
+    [undefined, undefined],
+    [42, undefined],
+    [null, undefined],
+    ["https://viewer.diagrams.net", "https://viewer.diagrams.net"],
+  ])("%j parses as %j", (value, expected) => {
+    const parsed = AppConfigSchema.parse({
+      cdn_domain: "cdn.example.com",
+      drawio_viewer_url: value,
+    });
+    expect(parsed.drawio_viewer_url).toBe(expected);
+  });
+});

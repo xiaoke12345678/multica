@@ -55,6 +55,12 @@ type AppConfig struct {
 	// defaults absent to false (hidden).
 	VCSIntegrationAvailable bool `json:"vcs_integration_available,omitempty"`
 
+	// DrawioViewerURL is the draw.io viewer base URL clients embed in a
+	// sandboxed iframe to render ```drawio fences and .drawio attachments.
+	// Omitted when an operator turns the preview off (or configured an
+	// invalid URL); clients treat absent as off and show the XML instead.
+	DrawioViewerURL string `json:"drawio_viewer_url,omitempty"`
+
 	// PostHog public config for the frontend. The key is the same Project
 	// API Key the backend uses; returning it here (instead of baking it
 	// into the frontend bundle via NEXT_PUBLIC_*) means self-hosted
@@ -135,6 +141,7 @@ func (h *Handler) GetConfig(w http.ResponseWriter, r *http.Request) {
 	config.DaemonServerURL, config.DaemonAppURL = daemonSetupURLsFromEnv()
 	config.DaemonSetupTarget = "self_host"
 	config.VCSIntegrationAvailable = h.cfg.VCSIntegrationEnabled
+	config.DrawioViewerURL = h.cfg.DrawioViewerURL
 	config.StarPromptDisabled = h.cfg.DisableStarPrompt
 	config.FeatureFlags = featureflags.EvaluateFrontendPublicFlags(r.Context(), h.FeatureFlags)
 	// Only surface the build version on self-hosted deployments. The managed

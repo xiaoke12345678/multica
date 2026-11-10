@@ -943,6 +943,10 @@ export interface AppConfigResponse {
    * DELETE /api/comments/{id}/keep-replies. Older servers deleted the replies
    * too, so absent must be treated as false (#8296). */
   comment_delete_keep_replies_supported?: boolean;
+  /** draw.io viewer base URL for diagram previews. Absent or empty means the
+   * operator turned the embedded preview off (and is what older servers send),
+   * so clients show the XML instead. */
+  drawio_viewer_url?: string;
   server_version?: string;
 }
 
@@ -1214,6 +1218,7 @@ export const AppConfigSchema = z.object({
   agent_conversation_starters_supported: BooleanWithDefaultSchema(false),
   issue_create_properties_supported: BooleanWithDefaultSchema(false),
   comment_delete_keep_replies_supported: BooleanWithDefaultSchema(false),
+  drawio_viewer_url: OptionalStringSchema,
   server_version: OptionalStringSchema,
 }).loose();
 
@@ -1238,6 +1243,8 @@ export const EMPTY_APP_CONFIG: AppConfigResponse = {
   issue_create_properties_supported: false,
   // Fail closed: old servers delete a comment's replies with it.
   comment_delete_keep_replies_supported: false,
+  // Fail closed: no viewer means diagrams render as XML.
+  drawio_viewer_url: "",
   feature_flags: {},
 };
 
