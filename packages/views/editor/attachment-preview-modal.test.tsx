@@ -3,6 +3,7 @@ import { act, fireEvent, render as rtlRender, screen, waitFor } from "@testing-l
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactElement } from "react";
 import type { Attachment } from "@multica/core/types";
+import { configStore } from "@multica/core/config";
 
 const { openExternalMock, isDesktopShellMock, copyImageMock, toastMock } =
   vi.hoisted(() => ({
@@ -166,6 +167,14 @@ vi.mock("../i18n", () => ({
           address: "Address",
           address_hint: "?query",
           reload: "Reload",
+        },
+        dynamic_block: { rendering: "Rendering..." },
+        drawio: {
+          title: "draw.io diagram",
+          error: "Couldn't show this draw.io diagram",
+          invalid: "This isn't valid draw.io XML.",
+          too_large: "This diagram is too large to preview here.",
+          unreachable: "Couldn't reach the draw.io viewer.",
         },
       }),
   }),
@@ -423,6 +432,54 @@ describe("AttachmentPreviewModal — dispatch", () => {
       const code = document.querySelector("code.hljs");
       expect(code).toBeTruthy();
       expect(code?.className).toContain("language-go");
+    });
+  });
+
+  describe("draw.io diagrams", () => {
+    const xml =
+      '<mxfile><diagram name="Page-1"><mxGraphModel><root/></mxGraphModel></diagram></mxfile>';
+    const viewer = "https://viewer.example.test";
+
+    afterEach(() => {
+      configStore.setState({ drawioViewerUrl: "" });
+      vi.unstubAllGlobals();
+    });
+
+    function openDiagram() {
+      getAttachmentTextContentMock.mockResolvedValueOnce({
+        text: xml,
+        originalContentType: "application/xml",
+      });
+      const att = makeAttachment({ filename: "arch.drawio", content_type: "application/xml" });
+      render(<AttachmentPreviewModal source={{ kind: "full", attachment: att }} open onClose={() => {}} />);
+    }
+
+    it("shows the XML when the deployment has no viewer", async () => {
+      openDiagram();
+      await waitFor(() => {
+        expect(document.querySelector("code.hljs")?.className).toContain("language-xml");
+      });
+      expect(document.querySelector("iframe")).toBeNull();
+    });
+
+    it("embeds the configured viewer, with the XML one toggle away", async () => {
+      configStore.setState({ drawioViewerUrl: viewer });
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null)));
+      openDiagram();
+
+      const frame = await waitFor(() => {
+        const el = document.querySelector("iframe") as HTMLIFrameElement | null;
+        expect(el).toBeTruthy();
+        return el!;
+      });
+      expect(frame.getAttribute("src")?.startsWith(`${viewer}/?lightbox=1`)).toBe(true);
+      expect(frame.getAttribute("sandbox")).toBe("allow-scripts allow-same-origin");
+
+      fireEvent.click(screen.getByRole("button", { name: "View source" }));
+      await waitFor(() => {
+        expect(document.querySelector("code.hljs")?.className).toContain("language-xml");
+      });
+      expect(document.querySelector("iframe")).toBeNull();
     });
   });
 
