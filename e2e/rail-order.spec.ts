@@ -52,3 +52,34 @@ test("rail spaces reorder by drag and keep their order", async ({ page }) => {
   await page.locator("[data-rail-item='chat'] a").click();
   await expect(page).toHaveURL(new RegExp(`/${slug}/chat`));
 });
+
+test("rail spaces reorder from the keyboard and Enter still opens one", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const slug = await loginAsDefault(page);
+  await page.evaluate(() => localStorage.removeItem("multica_rail_order"));
+  await reloadAppPage(page);
+
+  // Space picks Chat up, two steps up, Space drops it — without opening it.
+  await page.locator("[data-slot='app-rail'] [data-rail-item='chat'] a").focus();
+  await page.keyboard.press("Space");
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("Space");
+  await expect.poll(() => railOrder(page)).toEqual(["inbox", "chat", "work", "team", "autopilots"]);
+  await expect(page).toHaveURL(new RegExp(`/${slug}/issues`));
+
+  // Escape puts a picked-up space back where it was.
+  await page.locator("[data-slot='app-rail'] [data-rail-item='team'] a").focus();
+  await page.keyboard.press("Space");
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("Escape");
+  await expect.poll(() => railOrder(page)).toEqual(["inbox", "chat", "work", "team", "autopilots"]);
+
+  await reloadAppPage(page);
+  expect(await railOrder(page)).toEqual(["inbox", "chat", "work", "team", "autopilots"]);
+
+  // Enter opens the focused space rather than picking it up.
+  await page.locator("[data-slot='app-rail'] [data-rail-item='chat'] a").focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(new RegExp(`/${slug}/chat`));
+});
